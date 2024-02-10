@@ -4,7 +4,11 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const md5 = require("md5");
+// const md5 = require("md5");
+const bcrypt = require("bcrypt");
+
+const saltRound = 11;
+
 
 //make connection
 mongoose.connect("mongodb://localhost:27017/secretDB");
@@ -64,13 +68,24 @@ app.get("/register", function(req, res) {
 
 app.post("/register", (req,res)=>{
     const userEmail = req.body.username;
-    const userPassword = md5(req.body.password);
+    const userPassword = req.body.password;
 
-    const newUser = new User({
-        email: userEmail,
-        password: userPassword
+
+    bcrypt.genSalt(saltRound, function (err, salt) {
+      bcrypt.hash(userPassword, salt, function (err, hash) {
+        // Store hash in your password DB.
+        const newUser = new User({
+          email: userEmail,
+          password: hash,
+        });
+        newUser
+          .save()
+          .then(() => res.render("secrets"))
+          .catch((err) => console.log(err));
+      });
     });
-    newUser.save().then(()=> res.render("secrets")).catch(err => console.log(err));
+
+    
 
 })
 

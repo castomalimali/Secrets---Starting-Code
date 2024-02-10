@@ -41,19 +41,30 @@ app.get("/login", function(req, res) {
 })
 app.post("/login", (req, res) => {
   const userEmail = req.body.username;
-  const userPassword = md5(req.body.password);
+  const userPassword = req.body.password;
   console.log(userEmail, userPassword);
+
+  
 
   User.findOne({email: userEmail}).then((result)=>{
     
     if(result){
 
-        if(result.password === userPassword){
+        bcrypt.compare(userPassword, result.password, function (err, result) {
+          // result == true
+          if(result === true){
             res.render("secrets");
-        }
-        else{
+          }
+          else{
             res.send("failure wrong password");
-        }
+          }
+        });
+        // if(result.password === userPassword){
+        //     res.render("secrets");
+        // }
+        // else{
+        //     res.send("failure wrong password");
+        // }
     }
     else{
         res.send("failure: user not found");

@@ -56,29 +56,25 @@ app.get("/login", function (req, res) {
 app.post("/login", (req, res) => {
   const userEmail = req.body.username;
   const userPassword = req.body.password;
-  console.log(userEmail, userPassword);
-
-  User.findOne({ email: userEmail }).then((result) => {
-    if (result) {
-      bcrypt.compare(userPassword, result.password, function (err, result) {
-        // result == true
-        if (result === true) {
-          res.render("secrets");
-        } else {
-          res.send("failure wrong password");
-        }
-      });
-      // if(result.password === userPassword){
-      //     res.render("secrets");
-      // }
-      // else{
-      //     res.send("failure wrong password");
-      // }
-    } else {
-      res.send("failure: user not found");
+  
+  const user = new User(
+    {
+      username: userEmail,
+      password: userPassword
     }
+  )
+    req.login(user, (err)=>{
+      if(err){
+        console.log(err)
+      }
+      else{
+        passport.authenticate("local")(req,res, ()=>{
+          res.redirect("/secrets")
+        })
+      }
+    })
   });
-});
+
 
 app.get("/register", function (req, res) {
   res.render("register");
@@ -86,7 +82,7 @@ app.get("/register", function (req, res) {
 
 app.get("/secrets", (req,res)=>{
 
-  if(req.isAuthenticated){
+  if (req.isAuthenticated){
     res.render("secrets")
   }
   else{
@@ -105,13 +101,26 @@ app.post("/register", (req, res) => {
     else{
       
       passport.authenticate("local")(req, res, ()=> {
-        res.render("secrets");
+        res.redirect("/secrets");
 
       });
     }
   })
   
 });
+
+app.get("/logout", (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).send("Error logging out"); // Handle errors appropriately
+    } else {
+      res.clearCookie("connect.sid"); // Example of clearing the session cookie
+      res.redirect("/"); // Or redirect to your desired page after logout
+    }
+  });
+});
+
 
 app.get("submit", function (req, res) {
   res.render("submit");
